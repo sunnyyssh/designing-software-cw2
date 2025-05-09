@@ -1,0 +1,35 @@
+deployments:
+  gateway:
+    image: gateway:local
+    volumeMounts:
+      /etc/gateway:
+        configMap: gateway-conf
+  service:
+    image: service:local
+
+services:
+  gateway:
+    selector:
+      app: gateway
+    ports:
+      - name: http
+        port: 80
+        targetPort: 80
+        protocol: TCP
+    type: LoadBalancer
+  service:
+    selector:
+      app: service
+    ports:
+      - name: http
+        port: 8080
+        targetPort: 8080
+        protocol: TCP
+
+configMaps:
+  gateway-conf:
+    data:
+      config.yaml: |
+        locations:
+          /:
+            url: http://service:8080/

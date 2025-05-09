@@ -1,0 +1,3 @@
+locations:
+  /api/:
+    url: http://service:8080/
