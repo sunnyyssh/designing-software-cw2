@@ -7,8 +7,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/sunnyyssh/designing-software-cw2/file-storage/internal/errs"
-	"github.com/sunnyyssh/designing-software-cw2/file-storage/internal/model"
+	"github.com/sunnyyssh/designing-software-cw2/storage/internal/errs"
+	"github.com/sunnyyssh/designing-software-cw2/storage/internal/model"
 )
 
 type FileMetaRepository struct {

@@ -10,5 +10,5 @@ run: build
     helm install cw2 ./helm --values helm/values-local.yaml
     minikube tunnel
 
-stop:
+clean:
     helm uninstall cw2

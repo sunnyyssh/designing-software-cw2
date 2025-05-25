@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sunnyyssh/designing-software-cw2/file-storage/internal/errs"
-	"github.com/sunnyyssh/designing-software-cw2/file-storage/internal/model"
+	"github.com/sunnyyssh/designing-software-cw2/storage/internal/errs"
+	"github.com/sunnyyssh/designing-software-cw2/storage/internal/model"
 )
 
 type FileService interface {

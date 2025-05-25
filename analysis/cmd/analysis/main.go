@@ -9,10 +9,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/sunnyyssh/designing-software-cw2/storage/internal/config"
-	"github.com/sunnyyssh/designing-software-cw2/storage/internal/repository"
-	"github.com/sunnyyssh/designing-software-cw2/storage/internal/rest"
-	"github.com/sunnyyssh/designing-software-cw2/storage/internal/services"
+	"github.com/sunnyyssh/designing-software-cw2/analysis/internal/config"
+	"github.com/sunnyyssh/designing-software-cw2/analysis/internal/external"
+	"github.com/sunnyyssh/designing-software-cw2/analysis/internal/repository"
+	"github.com/sunnyyssh/designing-software-cw2/analysis/internal/rest"
+	"github.com/sunnyyssh/designing-software-cw2/analysis/internal/services"
 )
 
 func main() {
@@ -37,7 +38,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("loading default config failed: %s", err)
 	}
-	s3Client := s3.NewFromConfig(s3Cfg, func(o *s3.Options) {
+	awsS3Client := s3.NewFromConfig(s3Cfg, func(o *s3.Options) {
 		o.UsePathStyle = true
 	})
 
@@ -47,26 +48,32 @@ func main() {
 	}
 	defer db.Close()
 
-	repo := repository.NewFileMetaRepository(db)
-
-	svc := services.NewFileService(
-		repo,
-		&services.S3Config{
-			Bucket:    cfg.S3.Bucket,
-			UrlPrefix: cfg.S3.URLPrefix,
+	repo := repository.NewAnalysisRepository(db)
+	storageClient := external.NewStorageClient(cfg.StorageURL)
+	s3Client := external.NewS3Client(
+		&external.S3Config{
+			FileBucket:     cfg.S3.FileBucket,
+			ImageBucket:    cfg.S3.ImageBucket,
+			ImageURLPrefix: cfg.S3.ImageURLPrefix,
 		},
+		awsS3Client,
+	)
+	quickchartClient := external.NewQuickchartClient()
+
+	svc := services.NewAnalysisService(
+		repo,
+		storageClient,
 		s3Client,
+		quickchartClient,
 	)
 
-	handler := rest.NewFileHandler(svc)
+	handler := rest.NewAnalysisService(svc)
 
 	r := gin.New()
 
 	r.Use(gin.Logger())
 
-	r.POST("/file", handler.Upload)
-	r.GET("/file/:id", handler.Get)
-	r.GET("/file/hash", handler.ListByHash)
+	r.POST("/analyze/:id", handler.Analyze)
 
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal(err)

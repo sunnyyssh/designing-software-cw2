@@ -10,14 +10,17 @@ import (
 type Config struct {
 	S3 struct {
 		Region          string `yaml:"region"`
-		Bucket          string `yaml:"bucket"`
-		URLPrefix       string `yaml:"url_prefix"`
+		FileBucket      string `yaml:"file_bucket"`
+		ImageBucket     string `yaml:"image_bucket"`
+		ImageURLPrefix  string `yaml:"image_url_prefix"`
 		EndpointURL     string `yaml:"endpoint_url"`
 		SecretAccessKey string
 		AccessKeyId     string
 	} `yaml:"s3"`
 
 	PGConnString string
+
+	StorageURL string `yaml:"storage_url"`
 }
 
 func Load(path string) (*Config, error) {
