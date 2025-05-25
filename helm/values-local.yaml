@@ -10,6 +10,12 @@ deployments:
     volumeMounts:
       /etc/storage:
         configMap: storage-conf
+  analysis:
+    image: analysis:local
+    envSecret: analysis-sec-env
+    volumeMounts:
+      /etc/analysis:
+        configMap: analysis-conf
   minio:
     image: quay.io/minio/minio:latest
     args: ["server", "/data", "--console-address", ":9001"]
@@ -24,6 +30,11 @@ pg:
     database: storage
     owner: storage
     secret: storage-pg-sec
+  analysis-pg:
+    instances: 1
+    database: analysis
+    owner: analysis
+    secret: analysis-pg-sec
 
 services:
   gateway:
@@ -38,6 +49,14 @@ services:
   storage:
     selector:
       app: storage
+    ports:
+      - name: http
+        port: 8080
+        targetPort: 8080
+        protocol: TCP
+  analysis:
+    selector:
+      app: analysis
     ports:
       - name: http
         port: 8080
@@ -90,6 +109,24 @@ jobs:
               - secretRef:
                   name: storage-wait-pg-sec-env
         restartPolicy: Never
+  analysis-pg-migrate:
+    template:
+      spec:
+        containers:
+          - name: migrate
+            image: analysis-pg-migrate:local
+            command: ["flyway", "migrate"]
+            envFrom:
+              - secretRef:
+                  name: analysis-migrate-sec-env
+        initContainers:
+          - name: wait-pg
+            image: postgres:latest
+            command: *wait-pg-command
+            envFrom:
+              - secretRef:
+                  name: analysis-wait-pg-sec-env
+        restartPolicy: Never
   minio-init:
     template:
       spec:
@@ -103,6 +140,8 @@ jobs:
                 mc alias set myminio http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
                 mc mb myminio/storage
                 mc anonymous set download myminio/storage
+                mc mb myminio/image
+                mc anonymous set download myminio/image
                 mc admin accesskey create myminio --access-key $ACCESS_KEY_ID --secret-key $SECRET_ACCESS_KEY
             envFrom:
               - secretRef:
@@ -116,6 +155,8 @@ configMaps:
         locations:
           /storage/:
             url: http://storage:8080/
+          /analysis/:
+            url: http://analysis:8080/
   storage-conf:
     data:
       config.yaml: |
@@ -124,6 +165,16 @@ configMaps:
           endpoint_url: http://minio:9000
           bucket: storage
           url_prefix: http://localhost:9000/storage/
+  analysis-conf:
+    data:
+      config.yaml: |
+        s3:
+          region: ru
+          endpoint_url: http://minio:9000
+          file_bucket: storage
+          image_bucket: image
+          image_url_prefix: http://localhost:9000/image/
+        storage_url: http://storage:8080
 
 localSecrets:
   storage-sec-env:
@@ -150,3 +201,19 @@ localSecrets:
     MINIO_ROOT_PASSWORD: admin123
     ACCESS_KEY_ID: storage
     SECRET_ACCESS_KEY: storage-secret-access-key
+  analysis-sec-env:
+    PG_CONN_STRING: postgres://analysis:secret@analysis-pg-rw:5432/analysis?sslmode=disable
+    ACCESS_KEY_ID: storage
+    SECRET_ACCESS_KEY: storage-secret-access-key
+  analysis-pg-sec:
+    username: analysis
+    password: secret
+  analysis-migrate-sec-env:
+    FLYWAY_URL: jdbc:postgresql://analysis-pg-rw:5432/analysis
+    FLYWAY_USER: analysis
+    FLYWAY_PASSWORD: secret
+    FLYWAY_LOCATIONS: filesystem:/app/migrations
+    FLYWAY_VALIDATE_MIGRATION_NAMING: "true"
+    FLYWAY_BASELINE_ON_MIGRATE: "true"
+  analysis-wait-pg-sec-env:
+    PG_CONNECTION_STRING: postgres://analysis:secret@analysis-pg-rw:5432/analysis?sslmode=disable

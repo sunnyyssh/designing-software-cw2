@@ -67,7 +67,7 @@ func (s *AnalysisService) analyze(ctx context.Context, id int64) (*model.Analysi
 		return nil, err
 	}
 
-	plagiatedIDs, err := s.fetchPlagiatedIDs(ctx, file.MD5Hash)
+	plagiatedIDs, err := s.fetchPlagiatedIDs(ctx, id, file.MD5Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -96,15 +96,17 @@ func (s *AnalysisService) analyze(ctx context.Context, id int64) (*model.Analysi
 	}, nil
 }
 
-func (s *AnalysisService) fetchPlagiatedIDs(ctx context.Context, hash model.MD5) ([]int64, error) {
+func (s *AnalysisService) fetchPlagiatedIDs(ctx context.Context, id int64, hash model.MD5) ([]int64, error) {
 	metas, err := s.storageClient.ListByHash(ctx, hash)
 	if err != nil {
 		return nil, err
 	}
 
-	res := make([]int64, 0, len(metas))
+	var res []int64
 	for _, meta := range metas {
-		res = append(res, meta.ID)
+		if meta.ID != id {
+			res = append(res, meta.ID)
+		}
 	}
 	return res, nil
 }

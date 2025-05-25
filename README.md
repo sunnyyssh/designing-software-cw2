@@ -1,18 +1,14 @@
 # Designing Software, control work 2
 
-## Functions
+## Architecture
 
-- upload file
-- get file
-- statistics of the file (A. service)
-- 100% plagiat check (A. servcie)
-- (optional) visualization
+![architecture](architecture.png)
 
-## Desicions explanation
+## How to use
 
-- I decided to store `txt` files just in `TEXT` column in PostgreSQL because they are not meant to be big.
-- I use CloudNativePG  operator because it makes using pg in Kubernetes much easier, I don't wanna complain about PVC, replication and related things.
-- Minio is not persistent because it is not needed here
+First off, you should run backend. For this tou should follow "Prerequests" and "Run" sections below.
+
+Then load Postman collection from [**./postman/control-work-2.postman_collection.json**](postman/control-work-2.postman_collection.json) and use it.
 
 ## Prerequests
 
@@ -43,6 +39,8 @@ kubectl apply --server-side -f \
 
 ## Run
 
+NOTE: You can use `just run` instead of all the steps below.
+
 Build docker images
 
 ```bash
@@ -64,5 +62,5 @@ minikube tunnel
 Check if it is working
 
 ```bash
-curl http://0.0.0.0/ping
+curl http://localhost/storage/file/1
 ```

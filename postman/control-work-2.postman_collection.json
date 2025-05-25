@@ -1,0 +1,97 @@
+{
+	"info": {
+		"_postman_id": "5d7a3cfd-e889-4fcf-9046-4fdf377722ec",
+		"name": "control-work-2",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37479726"
+	},
+	"item": [
+		{
+			"name": "Upload File",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "file",
+					"file": {
+						"src": "/Users/bulatbagaviev/Documents/obsidian/учусь/go/паттерны.md"
+					}
+				},
+				"url": {
+					"raw": "localhost/storage/file",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"storage",
+						"file"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Analyze File",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost/analysis/analyze/:id",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"analysis",
+						"analyze",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "1",
+							"description": "File ID"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get File Meta",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "file",
+					"file": {
+						"src": "/Users/bulatbagaviev/Documents/obsidian/учусь/go/паттерны.md"
+					}
+				},
+				"url": {
+					"raw": "localhost/storage/file/1",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"storage",
+						"file",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

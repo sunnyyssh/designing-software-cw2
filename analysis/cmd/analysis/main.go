@@ -19,7 +19,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	cfg, err := config.Load("/etc/storage/config.yaml")
+	cfg, err := config.Load("/etc/analysis/config.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func main() {
 
 	r.Use(gin.Logger())
 
-	r.POST("/analyze/:id", handler.Analyze)
+	r.GET("/analyze/:id", handler.Analyze)
 
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal(err)

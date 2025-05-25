@@ -7,14 +7,20 @@ images=(
     "${repository}gateway:$tag" 
     "${repository}storage:$tag" 
     "${repository}storage-pg-migrate:$tag" 
+    "${repository}analysis:$tag" 
+    "${repository}analysis-pg-migrate:$tag" 
 )
 paths=(
     "gateway/"
     "storage/"
     "storage/"
+    "analysis/"
+    "analysis/"
 )
 dockerfiles=(
     "Dockerfile"
+    "Dockerfile"
+    "migrate.Dockerfile"
     "Dockerfile"
     "migrate.Dockerfile"
 )
