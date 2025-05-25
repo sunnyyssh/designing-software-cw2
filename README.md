@@ -6,7 +6,7 @@
 
 ## How to use
 
-First off, you should run backend. For this tou should follow "Prerequests" and "Run" sections below.
+First off, you should run backend. For this you should follow "Prerequests" and "Run" sections below.
 
 Then load Postman collection from [**./postman/control-work-2.postman_collection.json**](postman/control-work-2.postman_collection.json) and use it.
 
