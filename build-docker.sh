@@ -5,15 +5,18 @@ repository=""
 
 images=(
     "${repository}gateway:$tag" 
-    "${repository}service:$tag" 
+    "${repository}storage:$tag" 
+    "${repository}storage-pg-migrate:$tag" 
 )
 paths=(
     "gateway/"
-    "service/"
+    "storage/"
+    "storage/"
 )
 dockerfiles=(
     "Dockerfile"
     "Dockerfile"
+    "migrate.Dockerfile"
 )
 
 build-debug-local() {

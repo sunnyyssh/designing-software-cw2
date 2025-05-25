@@ -4,8 +4,26 @@ deployments:
     volumeMounts:
       /etc/gateway:
         configMap: gateway-conf
-  service:
-    image: service:local
+  storage:
+    image: storage:local
+    envSecret: storage-sec-env
+    volumeMounts:
+      /etc/storage:
+        configMap: storage-conf
+  minio:
+    image: quay.io/minio/minio:latest
+    args: ["server", "/data", "--console-address", ":9001"]
+    envSecret: minio-sec-env
+    volumeMounts:
+      /data:
+        readOnly: false
+
+pg:
+  storage-pg:
+    instances: 1
+    database: storage
+    owner: storage
+    secret: storage-pg-sec
 
 services:
   gateway:
@@ -17,19 +35,118 @@ services:
         targetPort: 80
         protocol: TCP
     type: LoadBalancer
-  service:
+  storage:
     selector:
-      app: service
+      app: storage
     ports:
       - name: http
         port: 8080
         targetPort: 8080
         protocol: TCP
+  minio:
+    selector:
+      app: minio
+    ports:
+      - name: api
+        port: 9000
+        targetPort: 9000
+      - name: console
+        port: 9001
+        targetPort: 9001
+    type: LoadBalancer
+
+jobs:
+  storage-pg-migrate:
+    template:
+      spec:
+        containers:
+          - name: migrate
+            image: storage-pg-migrate:local
+            command: ["flyway", "migrate"]
+            envFrom:
+              - secretRef:
+                  name: storage-migrate-sec-env
+        initContainers:
+          - name: wait-pg
+            image: postgres:latest
+            command: &wait-pg-command
+              - sh
+              - -c
+              - |
+                wait() {
+                    echo "Waiting for PostgreSQL readiness..."
+                    timeout 300 sh -c "
+                        until pg_isready -d $PG_CONNECTION_STRING ; do
+                            sleep 1
+                        done
+                        echo \"PostgreSQL is ready!\"
+                    "
+                }
+                if ! wait; then
+                    echo "Timeout reached while attempting to connect PostgreSQL"
+                    exit 1
+                fi
+            envFrom:
+              - secretRef:
+                  name: storage-wait-pg-sec-env
+        restartPolicy: Never
+  minio-init:
+    template:
+      spec:
+        containers:
+          - name: init
+            image: minio/mc
+            command:
+              - bash
+              - -c
+              - |
+                mc alias set myminio http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
+                mc mb myminio/storage
+                mc anonymous set download myminio/storage
+                mc admin accesskey create myminio --access-key $ACCESS_KEY_ID --secret-key $SECRET_ACCESS_KEY
+            envFrom:
+              - secretRef:
+                  name: minio-init-sec-env
+        restartPolicy: Never
 
 configMaps:
   gateway-conf:
     data:
       config.yaml: |
         locations:
-          /:
-            url: http://service:8080/
+          /storage/:
+            url: http://storage:8080/
+  storage-conf:
+    data:
+      config.yaml: |
+        s3:
+          region: ru
+          endpoint_url: http://minio:9000
+          bucket: storage
+          url_prefix: http://localhost:9000/storage/
+
+localSecrets:
+  storage-sec-env:
+    PG_CONN_STRING: postgres://storage:secret@storage-pg-rw:5432/storage?sslmode=disable
+    ACCESS_KEY_ID: storage
+    SECRET_ACCESS_KEY: storage-secret-access-key
+  storage-pg-sec:
+    username: storage
+    password: secret
+  storage-migrate-sec-env:
+    FLYWAY_URL: jdbc:postgresql://storage-pg-rw:5432/storage
+    FLYWAY_USER: storage
+    FLYWAY_PASSWORD: secret
+    FLYWAY_LOCATIONS: filesystem:/app/migrations
+    FLYWAY_VALIDATE_MIGRATION_NAMING: "true"
+    FLYWAY_BASELINE_ON_MIGRATE: "true"
+  storage-wait-pg-sec-env:
+    PG_CONNECTION_STRING: postgres://storage:secret@storage-pg-rw:5432/storage?sslmode=disable
+  minio-sec-env:
+    MINIO_ROOT_USER: admin
+    MINIO_ROOT_PASSWORD: admin123
+  minio-init-sec-env:
+    MINIO_ROOT_USER: admin
+    MINIO_ROOT_PASSWORD: admin123
+    ACCESS_KEY_ID: storage
+    SECRET_ACCESS_KEY: storage-secret-access-key

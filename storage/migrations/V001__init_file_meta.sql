@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS file_meta (
     id SERIAL PRIMARY KEY,
-    md5_hash CHAR(24),
-    url VARCHAR(256),
+    md5_hash CHAR(24) NOT NULL,
+    s3_key CHAR(36) NOT NULL,
+    url VARCHAR(256) NOT NULL
 );

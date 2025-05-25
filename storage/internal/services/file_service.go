@@ -43,7 +43,7 @@ func NewFileService(repo FileMetaRepository, s3Cfg *S3Config, s3Client S3Client)
 	}
 }
 
-func (s *FileService) Store(ctx context.Context, text string) (*model.FileMeta, error) {
+func (s *FileService) Upload(ctx context.Context, text string) (*model.FileMeta, error) {
 	sha256Hash := sha256.Sum256([]byte(text))
 	s3Key := uuid.NewString()
 	_, err := s.s3Client.PutObject(ctx, &s3.PutObjectInput{
@@ -61,6 +61,7 @@ func (s *FileService) Store(ctx context.Context, text string) (*model.FileMeta, 
 
 	meta := &model.FileMeta{
 		MD5Hash: model.MD5(base64.StdEncoding.EncodeToString(md5Hash[:])),
+		S3Key:   s3Key,
 		URL:     s.s3Cfg.UrlPrefix + s3Key,
 	}
 

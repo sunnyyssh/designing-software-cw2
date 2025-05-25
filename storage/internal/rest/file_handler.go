@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sunnyyssh/designing-software-cw2/file-storage/internal/errs"
@@ -28,8 +30,8 @@ func NewFileHandler(svc FileService) *FileHandler {
 }
 
 func (h *FileHandler) Upload(c *gin.Context) {
-	if ty := c.ContentType(); ty != "text/plain" {
-		c.String(400, "invalid content type. We are waiting text/plain from you. You sent %s to us. What for?", ty)
+	if ty := c.ContentType(); !strings.HasPrefix(ty, "text/") {
+		c.String(400, "invalid content type. We are waiting text/* from you. You sent %s to us. What for?", ty)
 		return
 	}
 
@@ -66,9 +68,14 @@ func (h *FileHandler) Get(c *gin.Context) {
 }
 
 func (h *FileHandler) ListByHash(c *gin.Context) {
-	hash := c.Param("hash")
-	if hash == "" {
+	hashRaw := c.Query("hash")
+	if hashRaw == "" {
 		c.String(400, "you should pass base64-encoded md5 hash")
+		return
+	}
+	hash, err := url.PathUnescape(hashRaw)
+	if err != nil {
+		c.String(400, "path escaping troubles: %s", err)
 		return
 	}
 

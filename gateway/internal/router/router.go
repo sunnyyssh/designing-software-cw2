@@ -1,6 +1,7 @@
 package router
 
 import (
+	"bytes"
 	"io"
 	"log"
 	"net/http"
@@ -13,7 +14,7 @@ type Config struct {
 
 type Location struct {
 	Prefix string
-	URL string
+	URL    string
 }
 
 type Router struct {
@@ -31,11 +32,11 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Path
 
 	log.Printf("got %s %s", req.Method, path)
-	
+
 	var (
-		loc Location
+		loc       Location
 		routePath string
-		ok bool
+		ok        bool
 	)
 
 	for _, l := range r.locs {
@@ -92,11 +93,18 @@ func write(w http.ResponseWriter, resp *http.Response) error {
 
 func buildReq(baseReq *http.Request, loc *Location, path string) (*http.Request, error) {
 	defer baseReq.Body.Close()
-	req, err := http.NewRequest(baseReq.Method, loc.URL+path, baseReq.Body)
+
+	body := &bytes.Buffer{}
+	if _, err := io.Copy(body, baseReq.Body); err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(baseReq.Method, loc.URL+path, body)
 	if err != nil {
 		return nil, err
 	}
 
+	req.URL.RawQuery = baseReq.URL.RawQuery
 	req.Header = baseReq.Header
 
 	return req, nil
@@ -113,7 +121,7 @@ func notFound(w http.ResponseWriter) error {
 	}
 
 	return nil
-} 
+}
 
 var internalServerErrorBody = []byte(`{"error":"Internal server error","code":500}`)
 
