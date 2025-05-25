@@ -1,6 +1,22 @@
 # Designing Software, control work 2
 
+## Functions
+
+- upload file
+- get file
+- statistics of the file (A. service)
+- 100% plagiat check (A. servcie)
+- (optional) visualization
+
+## Desicions explanation
+
+- I decided to store `txt` files just in `TEXT` column in PostgreSQL because they are not meant to be big.
+- I use CloudNativePG  operator because it makes using pg in Kubernetes much easier, I don't wanna complain about PVC, replication and related things.
+- Minio is not persistent because it is not needed here
+
 ## Prerequests
+
+Backend is cloud native and ready to be ran in Kubernetes cluster, so here we go.
 
 Install `minikube`: [tap](https://minikube.sigs.k8s.io/docs/start/?arch=%2Fmacos%2Farm64%2Fstable%2Fbinary+download)
 
